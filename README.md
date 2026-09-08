@@ -34,7 +34,7 @@ Abre `http://localhost:5173`. La app arranca con `VITE_DATA_SOURCE=mock` implíc
 - Catálogo de productos activos, categorías, búsqueda normalizada, filtros y ordenamiento.
 - Productos con fotografías, una o varias opciones obligatorias u opcionales, galería y fallback de imagen.
 - Bolsa persistente con variantes, cantidades, subtotales, total y validación contra el catálogo actual.
-- Checkout con domicilio (nombre, ciudad, departamento, barrio, dirección, complemento e indicaciones) o recogida en local. Los datos personales viven únicamente en memoria y se borran al recargar.
+- Checkout con solo nombre y ciudad. Dirección, envío o recogida y medios de pago se coordinan por WhatsApp. Las condiciones y tiempos de entrega se muestran antes de enviar el pedido. Los datos personales viven únicamente en memoria y se borran al recargar.
 - Revisión final y mensaje legible prellenado para `https://wa.me/…`. Si aún no hay número configurado, el pedido se puede copiar para pruebas.
 - Aviso informativo de compras al por mayor desde $50.000, sin bloquear pedidos inferiores ni aplicar cambios de precio.
 - Administración de productos, categorías, fotografías, opciones, destacado y activo/inactivo. Precio normal y mayorista por separado, y eliminación definitiva con confirmación. No hay inventario, clientes, pedidos ni pagos.

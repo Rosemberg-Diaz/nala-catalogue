@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { StoreContext } from './store';
 import type { Catalog, Delivery, Product } from '../domain/models';
-import { business } from '../config';
 import { cartKey, MAX_LINES, MAX_QUANTITY, optionErrors, parseCart } from '../domain/order';
 import { getRepository } from '../data/repository';
 const CART_KEY = 'nala.cart.v1';
@@ -9,7 +8,7 @@ export default function StoreProvider({ children }: { children: ReactNode }) {
   const [catalog, setCatalog] = useState<Catalog>({ products: [], categories: [] });
   const [loading, setLoading] = useState(true), [error, setError] = useState(''), [notice, notify] = useState('');
   const [cart, setCart] = useState(() => { try { return parseCart(localStorage.getItem(CART_KEY)); } catch { return []; } });
-  const [delivery, setDelivery] = useState<Delivery>({ method: '', name: '', city: business.city, department: business.department, neighborhood: '', address: '', complement: '', instructions: '', comments: '' });
+  const [delivery, setDelivery] = useState<Delivery>({ name: '', city: '' });
   const refresh = useCallback(async () => {
     setLoading(true); setError('');
     try { setCatalog(await (await getRepository()).getCatalog()); } catch { setError('No pudimos cargar el catálogo. Revisa tu conexión e inténtalo de nuevo.'); } finally { setLoading(false); }

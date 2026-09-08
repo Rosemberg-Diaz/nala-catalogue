@@ -32,7 +32,7 @@ test('static subfolder supports photos, reload, cart and the configured WhatsApp
   await page.reload();
   await expect(page.locator('.summary-total')).toContainText('$22.400');
   await page.getByRole('link', { name: 'Continuar con mi pedido' }).click();
-  await page.getByRole('radio', { name: /Recoger en el local/ }).check();
+  await page.getByLabel('Ciudad', { exact: true }).fill('Cali');
   await page.getByLabel(/^Nombre completo/).fill('Cliente de prueba');
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
   await page.route('https://wa.me/**', route => route.fulfill({ contentType: 'text/html', body: '<p>Chat intercepted</p>' }));

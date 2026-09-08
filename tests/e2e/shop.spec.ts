@@ -4,7 +4,7 @@ async function addSimple(page: import('@playwright/test').Page) {
   await page.goto('/producto/pulsera-luna'); await page.getByRole('button', { name: 'Agregar a mi bolsa', exact: true }).click();
   await page.getByRole('link', { name: /Mi bolsa, 1 productos/ }).click();
 }
-test('complete delivery and pickup flow, validation, variants, persistence and message', async ({ page }) => {
+test('name and city checkout validates, reviews, preserves cart and clears personal data', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Tu esencia');
   await page.locator('main').getByRole('link', { name: 'Explorar accesorios', exact: true }).click();
@@ -22,45 +22,42 @@ test('complete delivery and pickup flow, validation, variants, persistence and m
   await expect(page.locator('.summary-total')).toContainText('$44.800');
   await page.getByRole('link', { name: 'Continuar con mi pedido' }).click();
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
-  await expect(page.getByRole('alert')).toContainText('Elige cómo recibir');
-  await page.getByRole('radio', { name: /Envío a domicilio/ }).check();
-  await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
   await expect(page.getByText('Escribe tu nombre completo.')).toBeVisible();
+  await expect(page.getByText('Escribe tu ciudad.')).toBeVisible();
+  await expect(page.locator('form input')).toHaveCount(2);
+  await expect(page.getByRole('radio')).toHaveCount(0);
+  await expect(page.locator('.delivery-information')).toContainText('No todas las referencias');
+  await expect(page.locator('.delivery-information')).toContainText('Envíos en Cali: de 1 a 2 días hábiles');
+  await expect(page.locator('.delivery-information')).toContainText('Envíos nacionales: de 1 a 2 días hábiles después del pago');
+  await expect(page.locator('.delivery-information')).toContainText('punto físico en Cali');
+  await expect(page.locator('.delivery-information')).toContainText('transportadora');
+  await expect(page.locator('.delivery-information')).toContainText('guía');
+  await expect(page.locator('.delivery-information')).toContainText('No manejamos pago contraentrega');
+  await expect(page.locator('.delivery-information')).toContainText('Solo el valor del envío');
   await page.getByLabel(/^Nombre completo/).fill('Cliente de prueba');
-  await expect(page.getByLabel('Ciudad', { exact: true })).toHaveValue('Cali');
-  await expect(page.getByLabel('Departamento', { exact: true })).toHaveValue('Valle del Cauca');
-  await page.getByLabel(/^Barrio/).fill('Barrio de prueba');
-  await page.getByLabel(/^Dirección/).fill('Dirección de prueba');
-  await page.getByLabel(/Conjunto, edificio/).fill('Torre de prueba');
-  await page.getByLabel(/Indicaciones de entrega/).fill('Indicación de prueba');
-  await page.getByLabel(/Comentarios del pedido/).fill('Comentario & detalle');
+  await page.getByLabel('Ciudad', { exact: true }).fill('Bogotá');
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
   await expect(page.getByRole('heading', { name: 'Revisa tu pedido' })).toBeVisible();
-  await expect(page.locator('address')).toContainText('Dirección de prueba');
-  await expect(page.getByRole('button', { name: 'Enviar pedido a Nala', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Abrir WhatsApp', exact: true })).toHaveCount(0);
+  await expect(page.locator('.review-card').first()).toContainText('Ciudad: Bogotá');
+  await expect(page.locator('.delivery-information')).toBeVisible();
   await page.getByText('Ver mensaje completo').click();
   const message = page.getByRole('textbox', { name: 'Mensaje completo del pedido' });
-  await expect(message).toContainText('Torre de prueba');
-  await expect(message).toContainText('Indicación de prueba');
-  await expect(message).toContainText('Compras al por mayor a partir de $50.000');
+  await expect(message).toContainText('Ciudad: Bogotá');
   await expect(message).toContainText('$44.800');
   await page.getByRole('link', { name: 'Modificar mis datos' }).click();
-  await page.getByRole('radio', { name: /Recoger en el local/ }).check();
-  await expect(page.getByLabel('Dirección', { exact: true })).toHaveCount(0);
   await expect(page.getByLabel(/^Nombre completo/)).toHaveValue('Cliente de prueba');
+  await page.getByLabel('Ciudad', { exact: true }).fill('Medellín');
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
-  await expect(page.locator('address')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Enviar pedido a Nala', exact: true })).toBeVisible();
   await page.getByText('Ver mensaje completo').click();
-  await expect(message).toContainText('EL PEDIDO SERÁ RECOGIDO EN EL LOCAL');
-  await expect(message).not.toContainText('Dirección de prueba');
+  await expect(message).toContainText('Ciudad: Medellín');
+  await expect(message).not.toContainText('Bogotá');
   const storage = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
-  expect(storage).not.toContain('Cliente de prueba'); expect(storage).not.toContain('Dirección de prueba');
+  expect(storage).not.toContain('Cliente de prueba'); expect(storage).not.toContain('Medellín');
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.reload();
   await expect(page).toHaveURL(/checkout$/);
-  await page.getByRole('radio', { name: /Recoger en el local/ }).check();
   await expect(page.getByLabel(/^Nombre completo/)).toHaveValue('');
+  await expect(page.getByLabel('Ciudad', { exact: true })).toHaveValue('');
 });
 test('categories, sort, no results, inactive, image fallback and empty cart', async ({ page }) => {
   await page.goto('/catalogo?categoria=anillos');
@@ -81,7 +78,7 @@ test('categories, sort, no results, inactive, image fallback and empty cart', as
 test('stale catalog and unavailable cart are safely handled', async ({ page }) => {
   await addSimple(page);
   await page.getByRole('link', { name: 'Continuar con mi pedido' }).click();
-  await page.getByRole('radio', { name: /Recoger en el local/ }).check();
+  await page.getByLabel('Ciudad', { exact: true }).fill('Cali');
   await page.getByLabel(/^Nombre completo/).fill('Prueba local');
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
   await page.evaluate(catalog => { catalog.products.find(p => p.id === 'pulsera-luna')!.wholesalePrice = 25000; localStorage.setItem('nala.catalog.v1', JSON.stringify(catalog)); }, structuredClone(seed));
@@ -172,7 +169,7 @@ test('responsive pages at 360, 390, 412 and desktop have no overflow or broken p
 test('one action verifies the catalog and opens the complete WhatsApp order', async ({ page }) => {
   await addSimple(page);
   await page.getByRole('link', { name: 'Continuar con mi pedido' }).click();
-  await page.getByRole('radio', { name: /Recoger en el local/ }).check();
+  await page.getByLabel('Ciudad', { exact: true }).fill('Cali');
   await page.getByLabel(/^Nombre completo/).fill('Prueba de envío');
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
   // Intercept the navigation: no request or message reaches WhatsApp.
@@ -183,5 +180,5 @@ test('one action verifies the catalog and opens the complete WhatsApp order', as
   expect(message).toContain('Prueba de envío');
   expect(message).toContain('Pulsera Luna');
   expect(message).toContain('$17.600');
-  expect(message).toContain('EL PEDIDO SERÁ RECOGIDO EN EL LOCAL');
+  expect(message).toContain('Ciudad: Cali');
 });

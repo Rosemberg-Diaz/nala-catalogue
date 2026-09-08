@@ -21,6 +21,15 @@ export const business = {
   pickupAddress: import.meta.env.VITE_PICKUP_ADDRESS?.trim() || 'Dirección pendiente de configurar. La confirmaremos por WhatsApp.',
   city: 'Cali', department: 'Valle del Cauca',
   shipping: 'El costo de envío se confirma por WhatsApp y no está incluido en el total de productos.',
+  deliveryNotes: [
+    'No todas las referencias están disponibles para entrega inmediata.',
+    'Envíos en Cali: de 1 a 2 días hábiles. Envíos nacionales: de 1 a 2 días hábiles después del pago.',
+    'También puedes recoger tu pedido en un punto físico en Cali, con los mismos tiempos de entrega: de 1 a 2 días hábiles. Coordinaremos el punto y la recogida por WhatsApp.',
+    'Durante la compra te informaremos por WhatsApp el tiempo aproximado de entrega de tus referencias. Ten en cuenta este plazo antes de confirmar tu pedido.',
+    'Una vez entregado el paquete a la transportadora, dependemos de que nos comparta la guía para poder enviártela.',
+    'No manejamos pago contraentrega de los productos. Solo el valor del envío se puede pagar cuando recibas el paquete.',
+    'La dirección, la modalidad de entrega y los medios de pago se acuerdan directamente por WhatsApp.',
+  ],
   social: { instagram: '', facebook: '' },
   currency: 'COP', locale: 'es-CO',
 };

@@ -24,23 +24,14 @@ export function parseCart(raw: string | null): CartItem[] {
 }
 export function deliveryErrors(data: Delivery): Partial<Record<keyof Delivery, string>> {
   const errors: Partial<Record<keyof Delivery, string>> = {};
-  if (!['pickup', 'delivery'].includes(data.method)) errors.method = 'Elige cómo recibir tu pedido.';
   if (data.name.trim().length < 3) errors.name = 'Escribe tu nombre completo.';
-  if (data.method === 'delivery') {
-    const fields = { city: 'tu ciudad', department: 'tu departamento', neighborhood: 'tu barrio', address: 'tu dirección completa' } as const;
-    for (const [key, label] of Object.entries(fields)) if (data[key as keyof typeof fields].trim().length < 2) errors[key as keyof Delivery] = `Escribe ${label}.`;
-  }
-  for (const [key, value] of Object.entries(data)) if (value.length > (['comments', 'instructions'].includes(key) ? 500 : 180)) errors[key as keyof Delivery] = 'El texto es demasiado largo.';
+  if (data.city.trim().length < 2) errors.city = 'Escribe tu ciudad.';
+  for (const key of ['name', 'city'] as const) if (data[key].length > 180) errors[key] = 'El texto es demasiado largo.';
   return errors;
 }
 export function createOrderMessage(lines: CartLine[], delivery: Delivery): string {
   if (!lines.length || Object.keys(deliveryErrors(delivery)).length) throw new Error('Revisa los productos y completa tus datos.');
-  const result = ['🛍️ NUEVO PEDIDO · ' + business.name.toUpperCase(), '', '👤 CLIENTE', delivery.name.trim(), '', delivery.method === 'delivery' ? '🚚 ENVÍO A DOMICILIO' : '🏪 RECOGER EN EL LOCAL'];
-  if (delivery.method === 'delivery') {
-    result.push(`${delivery.city.trim()}, ${delivery.department.trim()}`, `Barrio: ${delivery.neighborhood.trim()}`, `Dirección: ${delivery.address.trim()}`);
-    if (delivery.complement.trim()) result.push(`Conjunto / edificio / apartamento: ${delivery.complement.trim()}`);
-    if (delivery.instructions.trim()) result.push(`Indicaciones: ${delivery.instructions.trim()}`);
-  } else result.push(business.pickupName, business.pickupAddress, 'EL PEDIDO SERÁ RECOGIDO EN EL LOCAL.');
+  const result = ['🛍️ NUEVO PEDIDO · ' + business.name.toUpperCase(), '', '👤 CLIENTE', delivery.name.trim(), 'Ciudad: ' + delivery.city.trim()];
   result.push('', '✨ PRODUCTOS');
   lines.forEach((line, i) => {
     result.push(`${i + 1}. ${line.product.name}`);
@@ -48,8 +39,7 @@ export function createOrderMessage(lines: CartLine[], delivery: Delivery): strin
     result.push(`   Cantidad: ${line.quantity} · Unitario al por mayor: ${money(cataloguePrice(line.product))}`, `   Subtotal: ${money(line.subtotal)}`, '');
   });
   result.push(`TOTAL PRODUCTOS: ${money(lines.reduce((sum, l) => sum + l.subtotal, 0))} COP`);
-  if (delivery.method === 'delivery') result.push(business.shipping);
-  if (delivery.comments.trim()) result.push('', `💬 COMENTARIOS\n${delivery.comments.trim()}`);
+  result.push(business.shipping, '', 'La dirección, el envío o recogida y los medios de pago se acuerdan por WhatsApp.');
   result.push('', business.wholesale.note, '', 'Pedido sujeto a confirmación por el negocio.');
   return result.join('\n');
 }

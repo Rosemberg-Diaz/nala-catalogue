@@ -3,8 +3,8 @@ import { seed } from '../../src/data/seed';
 import { cartKey, createOrderMessage, deliveryErrors, optionErrors, parseCart, resolveCart, whatsappLink } from '../../src/domain/order';
 import { productSchema } from '../../src/domain/models';
 import type { Delivery } from '../../src/domain/models';
-const pickup: Delivery = { method: 'pickup', name: 'Cliente de prueba', city: '', department: '', neighborhood: '', address: '', complement: '', instructions: '', comments: '' };
-const delivery: Delivery = { ...pickup, method: 'delivery', city: 'Cali', department: 'Valle del Cauca', neighborhood: 'Barrio de prueba', address: 'Dirección de prueba', complement: 'Torre de prueba, apartamento de prueba', instructions: 'Indicación de prueba' };
+const pickup: Delivery = { name: 'Cliente de prueba', city: 'Cali' };
+const delivery = pickup;
 const item = { productId: 'aretes-sol', options: { color: 'Dorado' }, quantity: 2 };
 describe('model and cart', () => {
   it('keeps wholesale prices below, at and above $50,000', () => {
@@ -36,10 +36,21 @@ describe('model and cart', () => {
   it('rejects unknown option keys and reprices changed products', () => { expect(resolveCart([{ ...item, options: { color: 'Dorado', invalid: 'x' } }], seed.products).issues).toHaveLength(1); expect(resolveCart([item], seed.products.map(p => p.id === item.productId ? { ...p, wholesalePrice: 10000 } : p)).total).toBe(20000); });
 });
 describe('checkout and WhatsApp', () => {
-  it('pickup requires no address, while delivery requires every address field', () => { expect(deliveryErrors(pickup)).toEqual({}); expect(Object.keys(deliveryErrors({ ...pickup, method: 'delivery' }))).toEqual(['city', 'department', 'neighborhood', 'address']); expect(deliveryErrors(delivery)).toEqual({}); });
-  it('requires method, nonblank name and bounded fields', () => { expect(deliveryErrors({ ...pickup, method: '', name: '  ' })).toHaveProperty('method'); expect(deliveryErrors({ ...pickup, comments: 'a'.repeat(501) })).toHaveProperty('comments'); });
-  it('includes all delivery information, variants, totals and preparation time', () => { const text = createOrderMessage(resolveCart([item], seed.products).lines, { ...delivery, comments: 'Comentario de prueba & detalle' }); for (const value of ['🛍️ NUEVO PEDIDO', '👤 CLIENTE', '🚚 ENVÍO A DOMICILIO', delivery.name, delivery.neighborhood, delivery.address, delivery.complement, delivery.instructions, 'Color: Dorado', 'Cantidad: 2', '$22.400', '$44.800', 'TOTAL PRODUCTOS', 'Compras al por mayor a partir de $50.000', 'Comentario de prueba & detalle']) expect(text).toContain(value); expect(text).not.toContain('🏪 RECOGER'); });
-  it('omits stale delivery details and empty optional fields for pickup', () => { const text = createOrderMessage(resolveCart([item], seed.products).lines, { ...delivery, method: 'pickup' }); expect(text).toContain('EL PEDIDO SERÁ RECOGIDO EN EL LOCAL'); for (const value of [delivery.address, delivery.complement, delivery.instructions, 'COMENTARIOS', 'ENVÍO A DOMICILIO']) expect(text).not.toContain(value); });
+  it('requires only name and city with bounded nonblank values', () => {
+    expect(deliveryErrors(delivery)).toEqual({});
+    expect(deliveryErrors({ name: '  ', city: ' ' })).toEqual({ name: 'Escribe tu nombre completo.', city: 'Escribe tu ciudad.' });
+    expect(deliveryErrors({ ...delivery, city: 'a'.repeat(181) })).toHaveProperty('city');
+    expect(deliveryErrors({ ...delivery, name: 'a'.repeat(181) })).toHaveProperty('name');
+  });
+  it('includes name, city, variants and wholesale totals', () => {
+    const text = createOrderMessage(resolveCart([item], seed.products).lines, { name: '  José & Ana  ', city: '  Bogotá  ' });
+    for (const value of ['José & Ana', 'Ciudad: Bogotá', 'Color: Dorado', 'Cantidad: 2', '$22.400', '$44.800', 'TOTAL PRODUCTOS', 'a partir de $50.000', 'medios de pago se acuerdan por WhatsApp']) expect(text).toContain(value);
+  });
+  it('does not include obsolete personal fields even if provided by an old client', () => {
+    const oldData = { ...delivery, method: 'delivery', address: 'DIRECCION PRIVADA', comments: 'NOTA PRIVADA', neighborhood: 'BARRIO PRIVADO' };
+    const text = createOrderMessage(resolveCart([item], seed.products).lines, oldData);
+    expect(text).not.toMatch(/PRIVADA|PRIVADO|ENVÍO A DOMICILIO|EL PEDIDO SERÁ RECOGIDO/);
+  });
   it('generates an official encoded URL without losing accents, emoji or ampersands', () => { const message = '🛍️ José & Ana\nTalla: 7 + envío'; const url = new URL(whatsappLink(message, '12345678901')); expect(url.hostname).toBe('wa.me'); expect(url.searchParams.get('text')).toBe(message); });
   it('does not invent a telephone number or create an empty order', () => { expect(() => whatsappLink('Pedido', '')).toThrow('pendiente de configurar'); expect(() => whatsappLink('Pedido', '+57abc')).toThrow(); expect(() => createOrderMessage([], delivery)).toThrow(); expect(() => createOrderMessage(resolveCart([item], seed.products).lines, { ...delivery, name: '' })).toThrow(); });
 });

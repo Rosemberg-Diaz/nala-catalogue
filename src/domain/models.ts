@@ -21,5 +21,5 @@ export type ProductImage = z.infer<typeof imageSchema>;
 export type Category = z.infer<typeof categorySchema>;
 export type CartItem = { productId: string; options: Record<string, string>; quantity: number };
 export type CartLine = CartItem & { key: string; product: Product; subtotal: number };
-export type Delivery = { method: 'delivery' | 'pickup' | ''; name: string; city: string; department: string; neighborhood: string; address: string; complement: string; instructions: string; comments: string };
+export type Delivery = { name: string; city: string };
 export type Catalog = { products: Product[]; categories: Category[] };
