@@ -22,3 +22,4 @@
 @media(max-width:780px){.brand>.brand-art{width:90px;height:68px}.brand{width:90px}.wholesale-copy{padding:28px}.wholesale-copy h2{font-size:36px}.wholesale-art>span{font-size:28px}.wholesale-art img{width:135px;height:120px}.wholesale-section{margin-bottom:40px}}
 @media(max-width:540px){.brand>.brand-art{width:84px;height:64px}.brand{width:84px}.hero-eyebrow{font-size:8px}.wholesale-panel{grid-template-columns:1fr}.wholesale-copy{padding:28px 22px}.wholesale-copy h2{font-size:36px}.wholesale-copy>p{font-size:13px}.wholesale-copy .eyebrow{font-size:9px}.wholesale-art{display:none}.wholesale-actions .button{width:100%;font-size:12px}.announcement{font-size:8px}.footer-bottom{font-size:10px}}
 .admin-prices{display:flex;flex-direction:column;gap:3px}.admin-prices small{font-size:11px;color:var(--muted)}
+.steps-grid small{display:flex;align-items:center;justify-content:center;padding:0;line-height:1;text-align:center}
