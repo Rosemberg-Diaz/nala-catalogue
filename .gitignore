@@ -13,3 +13,4 @@ playwright-report/
 .tools/
 artifacts/
 service-account*.json
+.codex-remote-attachments/

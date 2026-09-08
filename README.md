@@ -102,4 +102,8 @@ El workflow [`/.github/workflows/ci.yml`](.github/workflows/ci.yml) ejecuta type
 
 ## Checklist antes de publicar
 
-Confirma identidad de marca, materiales y medidas, precios, fotografías con licencia, número de WhatsApp, dirección del local, costos y cobertura de envío. Completa `.env.local`, revisa el texto de privacidad y ejecuta todas las comprobaciones. La marca y los productos incluidos en esta entrega son provisionales y están identificados como tales en el sitio.
+Confirma materiales y medidas, precios, fotografías con licencia, dirección del local, costos y cobertura de envío. Completa `.env.local`, revisa el texto de privacidad y ejecuta todas las comprobaciones. Los productos y sus fotografías son de muestra y están identificados como tales en el sitio.
+
+## Identidad Nala y venta al por mayor
+
+El logotipo y el corazón en `public/images/nala-logo.jpg` y `public/images/nala-heart.jpg` son los originales suministrados por el negocio. La interfaz usa su paleta rosa. Los mensajes de venta al por mayor se configuran en `src/config.ts` y enlazan a WhatsApp para consultar condiciones. Por ahora, los precios siguen siendo por unidad: no hay mínimos de compra, escalas de precios ni descuentos automáticos por cantidad.

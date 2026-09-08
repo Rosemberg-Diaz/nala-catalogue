@@ -7,6 +7,10 @@ test('static subfolder supports photos, reload, cart and the configured WhatsApp
   page.on('request', request => { if (request.resourceType() === 'image' && new URL(request.url()).pathname.startsWith('/images/')) outsideImages.push(request.url()); });
   await page.goto('./');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Tu esencia');
+  await expect.poll(() => page.locator('header .brand-art img').evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const wholesale = new URL((await page.getByRole('link', { name: 'Hablemos de tu compra al por mayor' }).getAttribute('href'))!);
+  expect(wholesale.origin + wholesale.pathname).toBe('https://wa.me/573173560428');
+  expect(wholesale.searchParams.get('text')).toContain('accesorios al por mayor');
   await expect.poll(() => page.locator('.hero-photo img').evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   await page.getByRole('link', { name: 'Saltar al contenido' }).focus();
   await page.keyboard.press('Enter');
