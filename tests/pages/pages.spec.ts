@@ -35,9 +35,10 @@ test('static subfolder supports photos, reload, cart and the configured WhatsApp
   await page.getByRole('radio', { name: /Recoger en el local/ }).check();
   await page.getByLabel(/^Nombre completo/).fill('Cliente de prueba');
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
-  await page.getByRole('button', { name: 'Preparar WhatsApp', exact: true }).click();
-  const href = await page.getByRole('link', { name: 'Abrir WhatsApp', exact: true }).getAttribute('href');
-  const link = new URL(href!);
+  await page.route('https://wa.me/**', route => route.fulfill({ contentType: 'text/html', body: '<p>Chat intercepted</p>' }));
+  await page.getByRole('button', { name: 'Enviar pedido a Nala', exact: true }).click();
+  await expect(page).toHaveURL(/^https:\/\/wa\.me\/573150026236\?text=/);
+  const link = new URL(page.url());
   expect(link.origin + link.pathname).toBe('https://wa.me/573150026236');
   expect(link.searchParams.get('text')).toContain('Cantidad: 1');
   expect(link.searchParams.get('text')).not.toMatch(/bajo pedido|días hábiles/i);

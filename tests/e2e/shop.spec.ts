@@ -37,8 +37,8 @@ test('complete delivery and pickup flow, validation, variants, persistence and m
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
   await expect(page.getByRole('heading', { name: 'Revisa tu pedido' })).toBeVisible();
   await expect(page.locator('address')).toContainText('Dirección de prueba');
-  await page.getByRole('button', { name: /Preparar WhatsApp|Volver a verificar pedido/ }).click();
-  await expect(page.getByRole('link', { name: 'Abrir WhatsApp', exact: true })).toHaveAttribute('href', /^https:\/\/wa\.me\/573150026236\?text=/);
+  await expect(page.getByRole('button', { name: 'Enviar pedido a Nala', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Abrir WhatsApp', exact: true })).toHaveCount(0);
   await page.getByText('Ver mensaje completo').click();
   const message = page.getByRole('textbox', { name: 'Mensaje completo del pedido' });
   await expect(message).toContainText('Torre de prueba');
@@ -51,7 +51,7 @@ test('complete delivery and pickup flow, validation, variants, persistence and m
   await expect(page.getByLabel(/^Nombre completo/)).toHaveValue('Cliente de prueba');
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
   await expect(page.locator('address')).toHaveCount(0);
-  await page.getByRole('button', { name: /Preparar WhatsApp|Volver a verificar pedido/ }).click();
+  await expect(page.getByRole('button', { name: 'Enviar pedido a Nala', exact: true })).toBeVisible();
   await page.getByText('Ver mensaje completo').click();
   await expect(message).toContainText('EL PEDIDO SERÁ RECOGIDO EN EL LOCAL');
   await expect(message).not.toContainText('Dirección de prueba');
@@ -85,7 +85,8 @@ test('stale catalog and unavailable cart are safely handled', async ({ page }) =
   await page.getByLabel(/^Nombre completo/).fill('Prueba local');
   await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
   await page.evaluate(catalog => { catalog.products.find(p => p.id === 'pulsera-luna')!.wholesalePrice = 25000; localStorage.setItem('nala.catalog.v1', JSON.stringify(catalog)); }, structuredClone(seed));
-  await page.getByRole('button', { name: /Preparar WhatsApp|Volver a verificar pedido/ }).click();
+  await expect(page.getByRole('button', { name: 'Enviar pedido a Nala', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Enviar pedido a Nala', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('El catálogo cambió');
   await expect(page.locator('.summary-total')).toContainText('$25.000');
   await page.evaluate(() => { const catalog = JSON.parse(localStorage.getItem('nala.catalog.v1')!); catalog.products.find((p: { id: string }) => p.id === 'pulsera-luna').active = false; localStorage.setItem('nala.catalog.v1', JSON.stringify(catalog)); });
@@ -167,4 +168,20 @@ test('responsive pages at 360, 390, 412 and desktop have no overflow or broken p
   }
   await page.goto('/catalogo');
   await expect.poll(() => page.locator('.product-card img').evaluateAll(images => images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
+});
+test('one action verifies the catalog and opens the complete WhatsApp order', async ({ page }) => {
+  await addSimple(page);
+  await page.getByRole('link', { name: 'Continuar con mi pedido' }).click();
+  await page.getByRole('radio', { name: /Recoger en el local/ }).check();
+  await page.getByLabel(/^Nombre completo/).fill('Prueba de envío');
+  await page.getByRole('button', { name: 'Revisar mi pedido' }).click();
+  // Intercept the navigation: no request or message reaches WhatsApp.
+  await page.route('https://wa.me/**', route => route.fulfill({ contentType: 'text/html', body: '<p>Chat intercepted</p>' }));
+  await page.getByRole('button', { name: 'Enviar pedido a Nala', exact: true }).click();
+  await expect(page).toHaveURL(/^https:\/\/wa\.me\/573150026236\?text=/);
+  const message = new URL(page.url()).searchParams.get('text');
+  expect(message).toContain('Prueba de envío');
+  expect(message).toContain('Pulsera Luna');
+  expect(message).toContain('$17.600');
+  expect(message).toContain('EL PEDIDO SERÁ RECOGIDO EN EL LOCAL');
 });
