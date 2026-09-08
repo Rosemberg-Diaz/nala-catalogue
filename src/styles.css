@@ -9,7 +9,7 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 @media(max-width:540px){.hero-copy{min-width:0}.hero h1{width:auto}.hero-sparkle{right:0}}
 .brand>.brand-art{display:block;position:relative;width:100px;height:76px;overflow:hidden;letter-spacing:normal;line-height:normal}
-.brand-art>img{position:absolute;max-width:none;width:205%;height:auto;left:-52.5%;top:-85%;mix-blend-mode:darken}
+.brand-art>img{position:absolute;max-width:none;width:195%;height:auto;left:-47.5%;top:-73%;mix-blend-mode:darken}
 .brand{width:104px}.site-header{background:#ffedf4}.footer .brand{transform:none}
 .hero-photo-label{color:#fff5fa;text-shadow:0 1px 6px #402d37}
 .hero-photo-label>span:first-child{background:#402d3770;padding:5px 8px;border-radius:3px;align-self:flex-start}
