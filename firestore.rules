@@ -38,11 +38,12 @@ service cloud.firestore {
     function validProduct(id) {
       let p = request.resource.data;
       return p.keys().hasAll(['id','name','description','price','categoryId','images','options','featured','active','createdAt'])
-        && p.keys().hasOnly(['id','name','description','price','categoryId','images','options','featured','active','createdAt'])
+        && p.keys().hasOnly(['id','name','description','price','wholesalePrice','categoryId','images','options','featured','active','createdAt'])
         && p.id == id && id.matches('[a-zA-Z0-9-]+') && id.size() <= 100
         && p.name is string && p.name.size() >= 2 && p.name.size() <= 100
         && p.description is string && p.description.size() >= 10 && p.description.size() <= 3000
         && p.price is int && p.price >= 1 && p.price <= 100000000
+        && (!('wholesalePrice' in p) || p.wholesalePrice == null || (p.wholesalePrice is int && p.wholesalePrice >= 1 && p.wholesalePrice <= 100000000))
         && p.categoryId is string && p.categoryId.size() > 0 && p.categoryId.size() <= 100
         && exists(/databases/$(database)/documents/categories/$(p.categoryId))
         && p.active is bool && p.featured is bool && p.createdAt is number
@@ -52,7 +53,7 @@ service cloud.firestore {
       allow read: if admin() || resource.data.active == true;
       allow create: if admin() && validProduct(id);
       allow update: if admin() && validProduct(id) && request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if false;
+      allow delete: if admin();
     }
     match /categories/{id} {
       allow read: if true;

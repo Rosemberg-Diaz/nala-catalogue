@@ -10,6 +10,7 @@ export const optionSchema = z.object({
 export const productSchema = z.object({
   id: z.string().regex(/^[a-zA-Z0-9-]+$/).max(100), name: z.string().trim().min(2).max(100),
   description: z.string().trim().min(10).max(3000), price: z.number().int().min(1).max(100000000),
+  wholesalePrice: z.number().int().min(1).max(100000000).nullable().optional(),
   categoryId: z.string().min(1).max(100), images: z.array(imageSchema).min(1).max(8),
   options: z.array(optionSchema).max(5).refine(options => new Set(options.map(o => o.id)).size === options.length, 'Las opciones deben tener identificadores diferentes.'),
   featured: z.boolean(), active: z.boolean(), createdAt: z.number().finite(),

@@ -1,0 +1,47 @@
+import { test, expect } from '@playwright/test';
+
+test('Firebase admin saves photos and both prices, toggles and deletes shared products', async ({ page, browser }) => {
+  await page.goto('/catalogo');
+  await expect(page.locator('.product-card')).toHaveCount(1);
+  await expect(page.locator('.product-card')).toContainText('Producto desde Firestore');
+  await page.goto('/admin');
+  await expect(page.getByRole('button', { name: 'Entrar al modo local' })).toHaveCount(0);
+  await page.getByLabel('Correo del administrador').fill('admin@example.test');
+  await page.getByLabel('Contraseña', { exact: true }).fill('Only-for-local-emulator-123');
+  await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuevo producto', exact: true }).click();
+  await page.getByLabel('Nombre del producto', { exact: true }).fill('Accesorio compartido');
+  await page.getByLabel('Descripción', { exact: true }).fill('Producto de prueba para verificar Firestore y las fotografías.');
+  await page.getByLabel('Precio normal en pesos colombianos', { exact: true }).fill('30000');
+  await page.getByLabel('Precio al por mayor en pesos colombianos (opcional)').fill('22000');
+  const url = 'https://res.cloudinary.com/nala-test/image/upload/v1/example.webp';
+  await page.route('https://api.cloudinary.com/**', async route => {
+    expect(route.request().postDataBuffer()!.toString()).toContain('image/webp');
+    await route.fulfill({ json: { secure_url: url, resource_type: 'image', format: 'webp' } });
+  });
+  await page.route(url, route => route.fulfill({ path: 'public/images/hero.jpg' }));
+  await page.getByLabel('Seleccionar fotografías').setInputFiles('public/images/hero.jpg');
+  await expect(page.locator('.admin-images>div')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Guardar producto', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Accesorio compartido', exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: 'Editar Accesorio compartido', exact: true }).click();
+  await expect(page.getByLabel('Precio normal en pesos colombianos', { exact: true })).toHaveValue('30000');
+  await expect(page.getByLabel('Precio al por mayor en pesos colombianos (opcional)')).toHaveValue('22000');
+  await expect(page.locator('.admin-images img')).toHaveAttribute('src', url);
+  await page.getByRole('button', { name: 'Cancelar edición' }).click();
+  const context = await browser.newContext();
+  const visitor = await context.newPage();
+  await visitor.goto('http://127.0.0.1:5176/catalogo');
+  await expect(visitor.locator('.product-card')).toHaveCount(2);
+  await expect(visitor.locator('.product-card').filter({ hasText: 'Accesorio compartido' })).toContainText('$30.000');
+  await page.getByRole('button', { name: 'Desactivar Accesorio compartido', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Activar Accesorio compartido', exact: true })).toBeVisible();
+  await visitor.reload(); await expect(visitor.locator('.product-card')).toHaveCount(1);
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Eliminar producto Accesorio compartido', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Accesorio compartido', exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('.admin-product')).toHaveCount(1);
+  await context.close();
+});

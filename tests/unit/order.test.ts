@@ -7,6 +7,15 @@ const pickup: Delivery = { method: 'pickup', name: 'Cliente de prueba', city: ''
 const delivery: Delivery = { ...pickup, method: 'delivery', city: 'Cali', department: 'Valle del Cauca', neighborhood: 'Barrio de prueba', address: 'Dirección de prueba', complement: 'Torre de prueba, apartamento de prueba', instructions: 'Indicación de prueba' };
 const item = { productId: 'aretes-sol', options: { color: 'Dorado' }, quantity: 2 };
 describe('model and cart', () => {
+  it('stores wholesale prices without applying quantity discounts and accepts older products', () => {
+    const product = seed.products.find(p => p.id === item.productId)!;
+    const { wholesalePrice: unused, ...legacy } = product;
+    expect(unused).toBeGreaterThan(0);
+    expect(productSchema.safeParse(legacy).success).toBe(true);
+    expect(productSchema.safeParse({ ...product, wholesalePrice: -1 }).success).toBe(false);
+    expect(productSchema.safeParse({ ...product, wholesalePrice: null }).success).toBe(true);
+    expect(resolveCart([{ ...item, quantity: 50 }], [{ ...product, wholesalePrice: 1000 }]).total).toBe(product.price * 50);
+  });
   it('validates the seed with simple, multi-option and inactive products', () => { expect(seed.products.every(p => productSchema.safeParse(p).success)).toBe(true); expect(seed.products.some(p => !p.active)).toBe(true); });
   it('requires every mandatory option and rejects invalid values', () => { const ring = seed.products.find(p => p.id === 'anillo-oliva')!; expect(optionErrors(ring, {})).toHaveLength(2); expect(optionErrors(ring, { color: 'Rojo', talla: '7' })).toHaveLength(1); expect(optionErrors(ring, { color: 'Dorado', talla: '7' })).toEqual([]); });
   it('uses stable variant keys independent of selection order', () => { expect(cartKey({ productId: 'x', options: { a: '1', b: '2' } })).toBe(cartKey({ productId: 'x', options: { b: '2', a: '1' } })); expect(cartKey(item)).not.toBe(cartKey({ ...item, options: { color: 'Plateado' } })); });

@@ -100,11 +100,15 @@ test('local administration manages products, options, categories and optimized p
   await expect(page.locator('.admin-product')).toHaveCount(9);
   await page.getByRole('button', { name: 'Editar Aretes Sol', exact: true }).click();
   await page.getByLabel('Nombre del producto', { exact: true }).fill('Aretes Sol editados');
-  await page.getByLabel('Precio en pesos colombianos').fill('29000');
+  await page.getByLabel('Precio normal en pesos colombianos').fill('29000');
+  await page.getByLabel('Precio al por mayor en pesos colombianos (opcional)').fill('21000');
   await page.getByLabel('Seleccionar fotografías').setInputFiles('public/images/hero.jpg');
   await expect(page.locator('.admin-images>div')).toHaveCount(3);
   await page.getByRole('button', { name: 'Guardar producto' }).click();
   await expect(page.getByRole('heading', { name: 'Aretes Sol editados' })).toBeVisible();
+  await page.getByRole('button', { name: 'Editar Aretes Sol editados', exact: true }).click();
+  await expect(page.getByLabel('Precio al por mayor en pesos colombianos (opcional)')).toHaveValue('21000');
+  await page.getByRole('button', { name: 'Cancelar edición' }).click();
   await page.getByRole('button', { name: 'Desactivar Aretes Sol editados' }).click();
   await expect(page.getByRole('button', { name: 'Activar Aretes Sol editados', exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Categorías/ }).click();
@@ -115,7 +119,7 @@ test('local administration manages products, options, categories and optimized p
   await page.getByRole('button', { name: 'Nuevo producto' }).click();
   await page.getByLabel('Nombre del producto', { exact: true }).fill('Producto de prueba');
   await page.getByLabel('Descripción', { exact: true }).fill('Descripción del producto de prueba, únicamente para validar la tienda.');
-  await page.getByLabel('Precio en pesos colombianos').fill('15000');
+  await page.getByLabel('Precio normal en pesos colombianos').fill('15000');
   await page.getByRole('combobox', { name: 'Categoría', exact: true }).selectOption({ label: 'Accesorios de prueba' });
   await page.getByLabel('O agregar una URL de imagen').fill('/images/necklace.jpg');
   await page.getByRole('button', { name: 'Agregar imagen', exact: true }).click();
@@ -133,6 +137,23 @@ test('local administration manages products, options, categories and optimized p
   await page.getByRole('button', { name: 'Agregar a mi bolsa', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: 'se agregó' })).toBeVisible();
 });
+test('product deletion requires confirmation and persists after reload', async ({ page }) => {
+  await page.goto('/admin');
+  await page.getByRole('button', { name: 'Entrar al modo local' }).click();
+  const remove = page.getByRole('button', { name: 'Eliminar producto Aretes Sol', exact: true });
+  page.once('dialog', dialog => dialog.dismiss());
+  await remove.click();
+  await expect(remove).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
+  await remove.click();
+  await expect(remove).toHaveCount(0);
+  await page.reload();
+  await page.getByRole('button', { name: 'Entrar al modo local' }).click();
+  await expect(remove).toHaveCount(0);
+  await page.goto('/producto/aretes-sol');
+  await expect(page.getByRole('heading', { name: 'Este detalle no está disponible' })).toBeVisible();
+});
+
 test('responsive pages at 360, 390, 412 and desktop have no overflow or broken photos', async ({ page }, testInfo) => {
   for (const width of [360, 390, 412, 1280]) {
     await page.setViewportSize({ width, height: 900 });

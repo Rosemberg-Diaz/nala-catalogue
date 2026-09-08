@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { db } from './firebase';
 import type { CatalogRepository } from './repository';
 import { categorySchema, productSchema } from '../domain/models';
@@ -17,4 +17,5 @@ export const firebaseRepository: CatalogRepository = {
     await setDoc(doc(db, 'products', product.id), validated);
   },
   async saveCategory(category) { await setDoc(doc(db, 'categories', category.id), categorySchema.parse(category)); },
+  async deleteProduct(id) { await deleteDoc(doc(db, 'products', id)); },
 };

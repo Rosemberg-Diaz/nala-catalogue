@@ -1,9 +1,9 @@
-import { applicationDefault, initializeApp } from 'firebase-admin/app';
+import { createAdminApp } from './admin-app.mjs';
 import { getAuth } from 'firebase-admin/auth';
-const [uid, projectId] = process.argv.slice(2);
-if (!uid || !projectId || uid.startsWith('-') || projectId.startsWith('-')) throw new Error('Uso: npm run admin:grant -- UID PROJECT_ID. Usa credenciales ADC de un entorno de confianza.');
-initializeApp({ credential: applicationDefault(), projectId });
+const [identity, projectId] = process.argv.slice(2);
+if (!identity || !projectId || identity.startsWith('-') || projectId.startsWith('-')) throw new Error('Uso: pnpm admin:grant CORREO_O_UID PROJECT_ID. Usa credenciales ADC de un entorno de confianza.');
+createAdminApp(projectId);
 const auth = getAuth();
-const user = await auth.getUser(uid);
-await auth.setCustomUserClaims(uid, { ...user.customClaims, admin: true });
+const user = identity.includes('@') ? await auth.getUserByEmail(identity) : await auth.getUser(identity);
+await auth.setCustomUserClaims(user.uid, { ...user.customClaims, admin: true });
 console.log('Permiso administrativo asignado. Cierra e inicia sesión para renovar el token.');

@@ -15,4 +15,4 @@ const items: Omit<Product, 'createdAt'>[] = [
   { id: 'pulsera-iris', name: 'Pulsera Iris', description: 'Una pieza para combinar a tu manera, con un detalle delicado que acompaña cualquier ocasión. Producto de muestra; material y medidas por confirmar.', price: 24000, categoryId: 'pulseras', images: [photo('bracelet', 'Pulsera de acabado brillante')], options: [color], featured: false, active: true },
   { id: 'anillo-archivo', name: 'Anillo Aurora', description: 'Diseño de muestra desactivado. Se conserva para poder reactivarlo desde administración.', price: 26000, categoryId: 'anillos', images: [photo('ring', 'Anillo de muestra')], options: [], featured: false, active: false },
 ];
-export const seed: Catalog = { categories, products: items.map((p, index) => ({ ...p, createdAt: 1754000000000 + index })) };
+export const seed: Catalog = { categories, products: items.map((p, index) => ({ ...p, wholesalePrice: Math.round(p.price * 0.8), createdAt: 1754000000000 + index })) };

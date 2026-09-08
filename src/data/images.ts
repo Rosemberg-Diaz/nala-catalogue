@@ -23,6 +23,12 @@ export const imageStore: ImageStore = {
   async upload(file) {
     const blob = await optimizeImage(file), id = crypto.randomUUID();
     if (dataMode === 'mock') { await set(`nala.image.${id}`, blob); return { url: `local:${id}`, alt: file.name.replace(/\.[^.]+$/, '') }; }
+    if (import.meta.env.VITE_IMAGE_PROVIDER === 'cloudinary') {
+      const [{ auth }, { uploadCloudinary }] = await Promise.all([import('./firebase'), import('./cloudinary')]);
+      const token = await auth.currentUser?.getIdTokenResult();
+      if (token?.claims.admin !== true) throw new Error('Inicia sesión como administrador para subir fotografías.');
+      return uploadCloudinary(blob, file.name, import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '');
+    }
     if (import.meta.env.VITE_IMAGE_PROVIDER === 'firebase-storage') {
       const [{ firebaseApp }, { getStorage, ref, uploadBytes, getDownloadURL, connectStorageEmulator }] = await Promise.all([import('./firebase'), import('firebase/storage')]);
       const storage = getStorage(firebaseApp);

@@ -17,7 +17,9 @@
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-nala \"vitest run --config vitest.rules.config.ts\"",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build",
     "deploy": "node scripts/check-deploy.mjs && npm run check && firebase deploy --only hosting,firestore",
-    "admin:grant": "node scripts/grant-admin.mjs"
+    "admin:grant": "node scripts/grant-admin.mjs",
+    "firebase:seed": "node --experimental-strip-types scripts/seed-firestore.mjs",
+    "test:firebase": "firebase emulators:exec --only firestore,auth --project demo-nala \"playwright test --config playwright.firebase.config.ts\""
   },
   "dependencies": {
     "firebase": "^12.0.0",

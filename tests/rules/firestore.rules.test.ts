@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 import { seed } from '../../src/data/seed';
 
@@ -19,6 +19,19 @@ beforeAll(async () => {
 });
 afterAll(async () => { await testEnv.cleanup(); });
 describe('Firestore security rules', () => {
+  it('protects deletion and validates the optional wholesale price', async () => {
+    const admin = testEnv.authenticatedContext('admin-user', { admin: true }).firestore();
+    const regular = testEnv.authenticatedContext('customer').firestore();
+    const guest = testEnv.unauthenticatedContext().firestore();
+    const ref = doc(admin, 'products', 'pricing-test');
+    await assertSucceeds(setDoc(ref, { ...product, id: 'pricing-test', wholesalePrice: 18000 }));
+    await assertFails(setDoc(ref, { ...product, id: 'pricing-test', wholesalePrice: -1 }));
+    await assertFails(setDoc(ref, { ...product, id: 'pricing-test', wholesalePrice: 12.5 }));
+    await assertSucceeds(setDoc(ref, { ...product, id: 'pricing-test', wholesalePrice: null }));
+    await assertFails(deleteDoc(doc(regular, 'products', 'pricing-test')));
+    await assertFails(deleteDoc(doc(guest, 'products', 'pricing-test')));
+    await assertSucceeds(deleteDoc(ref));
+  });
   it('lets the public read active products but not inactive products', async () => {
     const db = testEnv.unauthenticatedContext().firestore();
     await assertSucceeds(getDoc(doc(db, 'products', product.id)));
