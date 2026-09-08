@@ -1,3 +1,4 @@
+import { cataloguePrice } from './pricing';
 import { z } from 'zod';
 import { business, money } from '../config';
 import type { CartItem, CartLine, Delivery, Product } from './models';
@@ -13,7 +14,7 @@ export function resolveCart(items: CartItem[], products: Product[]) {
     const product = products.find(p => p.id === item.productId && p.active);
     if (!product) { issues.push('Un producto de tu bolsa ya no está disponible. Elimínalo para continuar.'); continue; }
     if (optionErrors(product, item.options).length || Object.keys(item.options).some(id => !product.options.some(o => o.id === id))) { issues.push(`Las opciones de ${product.name} cambiaron. Elimínalo y vuelve a elegirlo.`); continue; }
-    lines.push({ ...item, product, key: cartKey(item), subtotal: product.price * item.quantity });
+    lines.push({ ...item, product, key: cartKey(item), subtotal: cataloguePrice(product) * item.quantity });
   }
   return { lines, issues, total: lines.reduce((sum, line) => sum + line.subtotal, 0) };
 }
@@ -44,12 +45,12 @@ export function createOrderMessage(lines: CartLine[], delivery: Delivery): strin
   lines.forEach((line, i) => {
     result.push(`${i + 1}. ${line.product.name}`);
     line.product.options.forEach(option => { if (line.options[option.id]) result.push(`   ${option.name}: ${line.options[option.id]}`); });
-    result.push(`   Cantidad: ${line.quantity} · Unitario: ${money(line.product.price)}`, `   Subtotal: ${money(line.subtotal)}`, '');
+    result.push(`   Cantidad: ${line.quantity} · Unitario al por mayor: ${money(cataloguePrice(line.product))}`, `   Subtotal: ${money(line.subtotal)}`, '');
   });
   result.push(`TOTAL PRODUCTOS: ${money(lines.reduce((sum, l) => sum + l.subtotal, 0))} COP`);
   if (delivery.method === 'delivery') result.push(business.shipping);
   if (delivery.comments.trim()) result.push('', `💬 COMENTARIOS\n${delivery.comments.trim()}`);
-  result.push('', '🕒 ' + business.preparation, '', 'Pedido sujeto a confirmación por el negocio.');
+  result.push('', business.wholesale.note, '', 'Pedido sujeto a confirmación por el negocio.');
   return result.join('\n');
 }
 export function whatsappLink(message: string, number = business.whatsappNumber) {

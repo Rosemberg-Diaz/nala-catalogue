@@ -12,8 +12,8 @@ test('Firebase admin saves photos and both prices, toggles and deletes shared pr
   await page.getByRole('button', { name: 'Nuevo producto', exact: true }).click();
   await page.getByLabel('Nombre del producto', { exact: true }).fill('Accesorio compartido');
   await page.getByLabel('Descripción', { exact: true }).fill('Producto de prueba para verificar Firestore y las fotografías.');
-  await page.getByLabel('Precio normal en pesos colombianos', { exact: true }).fill('30000');
-  await page.getByLabel('Precio al por mayor en pesos colombianos (opcional)').fill('22000');
+  await page.getByLabel('Precio al detal en pesos colombianos', { exact: true }).fill('30000');
+  await page.getByLabel('Precio al por mayor en pesos colombianos').fill('22000');
   const url = 'https://res.cloudinary.com/nala-test/image/upload/v1/example.webp';
   await page.route('https://api.cloudinary.com/**', async route => {
     expect(route.request().postDataBuffer()!.toString()).toContain('image/webp');
@@ -26,15 +26,15 @@ test('Firebase admin saves photos and both prices, toggles and deletes shared pr
   await expect(page.getByRole('heading', { name: 'Accesorio compartido', exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: 'Editar Accesorio compartido', exact: true }).click();
-  await expect(page.getByLabel('Precio normal en pesos colombianos', { exact: true })).toHaveValue('30000');
-  await expect(page.getByLabel('Precio al por mayor en pesos colombianos (opcional)')).toHaveValue('22000');
+  await expect(page.getByLabel('Precio al detal en pesos colombianos', { exact: true })).toHaveValue('30000');
+  await expect(page.getByLabel('Precio al por mayor en pesos colombianos')).toHaveValue('22000');
   await expect(page.locator('.admin-images img')).toHaveAttribute('src', url);
   await page.getByRole('button', { name: 'Cancelar edición' }).click();
   const context = await browser.newContext();
   const visitor = await context.newPage();
   await visitor.goto('http://127.0.0.1:5176/catalogo');
   await expect(visitor.locator('.product-card')).toHaveCount(2);
-  await expect(visitor.locator('.product-card').filter({ hasText: 'Accesorio compartido' })).toContainText('$30.000');
+  await expect(visitor.locator('.product-card').filter({ hasText: 'Accesorio compartido' })).toContainText('$22.000');
   await page.getByRole('button', { name: 'Desactivar Accesorio compartido', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Activar Accesorio compartido', exact: true })).toBeVisible();
   await visitor.reload(); await expect(visitor.locator('.product-card')).toHaveCount(1);

@@ -2,11 +2,11 @@
 
 Sitio principal publicado en Firebase Hosting Spark: **https://nala-catalogue.web.app/**. El panel está en **https://nala-catalogue.web.app/admin** y se abre también desde el enlace **Administración** del pie de página. Requiere una cuenta de Firebase Authentication con el claim `admin: true`. GitHub Pages continúa disponible y utiliza el mismo catálogo de Firestore.
 
-Tienda web mobile first para un emprendimiento de accesorios bajo pedido. La experiencia pública completa —inicio, categorías, búsqueda, producto, variantes, bolsa, checkout, revisión y WhatsApp— funciona sin Firebase usando un repositorio mock. La interfaz y la lógica de negocio consumen `CatalogRepository`, por lo que Firebase se activa sin reescribir las pantallas.
+Tienda web mobile first para un emprendimiento de accesorios al por mayor. La experiencia pública completa —inicio, categorías, búsqueda, producto, variantes, bolsa, checkout, revisión y WhatsApp— funciona sin Firebase usando un repositorio mock. La interfaz y la lógica de negocio consumen `CatalogRepository`, por lo que Firebase se activa sin reescribir las pantallas.
 
 ## Versión estática para compartir por GitHub Pages
 
-La carpeta `docs/` contiene la aplicación **ya compilada**, incluidas sus fotografías. Está lista para guardarse en Git junto al código. La compilación conectada usa Firebase para el catálogo y la autenticación; no necesita un servidor propio. El WhatsApp configurado es **+57 317 356 0428**.
+La carpeta `docs/` contiene la aplicación **ya compilada**, incluidas sus fotografías. Está lista para guardarse en Git junto al código. La compilación conectada usa Firebase para el catálogo y la autenticación; no necesita un servidor propio. El WhatsApp configurado es **+57 315 002 6236**.
 
 Después de subir los archivos a la rama `main`, abre **Settings → Pages → Build and deployment → Deploy from a branch**, selecciona **main** y **/docs** y guarda. Es el método de [publicación desde una carpeta de GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
@@ -36,15 +36,15 @@ Abre `http://localhost:5173`. La app arranca con `VITE_DATA_SOURCE=mock` implíc
 - Bolsa persistente con variantes, cantidades, subtotales, total y validación contra el catálogo actual.
 - Checkout con domicilio (nombre, ciudad, departamento, barrio, dirección, complemento e indicaciones) o recogida en local. Los datos personales viven únicamente en memoria y se borran al recargar.
 - Revisión final y mensaje legible prellenado para `https://wa.me/…`. Si aún no hay número configurado, el pedido se puede copiar para pruebas.
-- Preparación de hasta 3 días hábiles visible antes de confirmar.
+- Aviso informativo de compras al por mayor desde $50.000, sin bloquear pedidos inferiores ni aplicar cambios de precio.
 - Administración de productos, categorías, fotografías, opciones, destacado y activo/inactivo. Precio normal y mayorista por separado, y eliminación definitiva con confirmación. No hay inventario, clientes, pedidos ni pagos.
 - Firebase opcional: Firestore, Authentication con custom claim `admin`, reglas de seguridad, Hosting y almacenamiento de imágenes.
 
 ## Configuración de negocio
 
 1. Copia `.env.example` a `.env.local`.
-2. Para pruebas conserva `VITE_DATA_SOURCE=mock`. `VITE_WHATSAPP_NUMBER=573173560428` corresponde al número confirmado del negocio; cámbialo solo si cambia ese contacto.
-3. Cambia los valores de marca, redes, ciudad, plazo y punto de recogida en `src/config.ts`. La dirección incluida por defecto está marcada como pendiente y no es una dirección real.
+2. Para pruebas conserva `VITE_DATA_SOURCE=mock`. `VITE_WHATSAPP_NUMBER=573150026236` corresponde al número confirmado del negocio; cámbialo solo si cambia ese contacto.
+3. Cambia los valores de marca, redes, ciudad y punto de recogida en `src/config.ts`. La dirección incluida por defecto está marcada como pendiente y no es una dirección real.
 4. Sustituye fotografías y textos de muestra antes de publicar.
 
 ## Firebase
@@ -59,7 +59,7 @@ VITE_FIREBASE_PROJECT_ID=...
 VITE_FIREBASE_APP_ID=...
 VITE_FIREBASE_STORAGE_BUCKET=...
 VITE_IMAGE_PROVIDER=static
-VITE_WHATSAPP_NUMBER=573173560428
+VITE_WHATSAPP_NUMBER=573150026236
 VITE_PICKUP_ADDRESS=Dirección confirmada del local
 VITE_SITE_URL=https://tu-dominio.web.app
 VITE_FIREBASE_EMULATORS=false
@@ -110,7 +110,7 @@ Confirma materiales y medidas, precios, fotografías con licencia, dirección de
 
 ## Identidad Nala y venta al por mayor
 
-El logotipo y el corazón en `public/images/nala-logo.jpg` y `public/images/nala-heart.jpg` son los originales suministrados por el negocio. La interfaz usa su paleta rosa. Los mensajes de venta al por mayor se configuran en `src/config.ts` y enlazan a WhatsApp para consultar condiciones. El campo `price` es el precio normal que usa la tienda. `wholesalePrice` permite guardar el precio mayorista, sin mostrarlo ni aplicarlo todavía en el pedido. Admite null o ausencia para productos anteriores. No hay mínimos de compra, escalas de precios ni descuentos automáticos por cantidad.
+El logotipo y el corazón en `public/images/nala-logo.jpg` y `public/images/nala-heart.jpg` son los originales suministrados por el negocio. La interfaz usa su paleta rosa. Los mensajes de venta al por mayor se configuran en `src/config.ts` y enlazan a WhatsApp para consultar condiciones. El campo `price` guarda el precio al detal; `wholesalePrice` es el precio predeterminado del catálogo, ordenamiento, bolsa y WhatsApp. El detalle muestra ambos precios. El aviso de $50.000 es informativo: incluso por debajo de ese total se usa el mayorista y Nala decide las condiciones por WhatsApp. El panel exige el precio mayorista al guardar; productos antiguos sin ese dato mantienen el precio disponible como compatibilidad, sin inventar descuentos. No se muestran condiciones internas de preparación.
 
 ## Conexión Firebase Spark y Cloudinary Free
 

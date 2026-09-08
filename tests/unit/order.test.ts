@@ -7,27 +7,38 @@ const pickup: Delivery = { method: 'pickup', name: 'Cliente de prueba', city: ''
 const delivery: Delivery = { ...pickup, method: 'delivery', city: 'Cali', department: 'Valle del Cauca', neighborhood: 'Barrio de prueba', address: 'Dirección de prueba', complement: 'Torre de prueba, apartamento de prueba', instructions: 'Indicación de prueba' };
 const item = { productId: 'aretes-sol', options: { color: 'Dorado' }, quantity: 2 };
 describe('model and cart', () => {
-  it('stores wholesale prices without applying quantity discounts and accepts older products', () => {
+  it('keeps wholesale prices below, at and above $50,000', () => {
+    const product = { ...seed.products.find(p => p.id === item.productId)!, price: 40000, wholesalePrice: 25000 };
+    for (const quantity of [1, 2, 3]) {
+      const { lines, total, issues } = resolveCart([{ ...item, quantity }], [product]);
+      expect(issues).toEqual([]); expect(total).toBe(25000 * quantity);
+      const message = createOrderMessage(lines, pickup);
+      expect(message).toContain('Unitario al por mayor: $25.000');
+      expect(message).not.toMatch(/bajo pedido|días hábiles/i);
+      expect(message).toContain('a partir de $50.000');
+    }
+  });
+  it('uses wholesale prices regardless of the order total and accepts older products', () => {
     const product = seed.products.find(p => p.id === item.productId)!;
     const { wholesalePrice: unused, ...legacy } = product;
     expect(unused).toBeGreaterThan(0);
     expect(productSchema.safeParse(legacy).success).toBe(true);
     expect(productSchema.safeParse({ ...product, wholesalePrice: -1 }).success).toBe(false);
     expect(productSchema.safeParse({ ...product, wholesalePrice: null }).success).toBe(true);
-    expect(resolveCart([{ ...item, quantity: 50 }], [{ ...product, wholesalePrice: 1000 }]).total).toBe(product.price * 50);
+    expect(resolveCart([{ ...item, quantity: 50 }], [{ ...product, wholesalePrice: 1000 }]).total).toBe(50000);
   });
   it('validates the seed with simple, multi-option and inactive products', () => { expect(seed.products.every(p => productSchema.safeParse(p).success)).toBe(true); expect(seed.products.some(p => !p.active)).toBe(true); });
   it('requires every mandatory option and rejects invalid values', () => { const ring = seed.products.find(p => p.id === 'anillo-oliva')!; expect(optionErrors(ring, {})).toHaveLength(2); expect(optionErrors(ring, { color: 'Rojo', talla: '7' })).toHaveLength(1); expect(optionErrors(ring, { color: 'Dorado', talla: '7' })).toEqual([]); });
   it('uses stable variant keys independent of selection order', () => { expect(cartKey({ productId: 'x', options: { a: '1', b: '2' } })).toBe(cartKey({ productId: 'x', options: { b: '2', a: '1' } })); expect(cartKey(item)).not.toBe(cartKey({ ...item, options: { color: 'Plateado' } })); });
   it('recovers from corrupt storage and rejects malformed quantities', () => { for (const value of ['{', 'null', '[1]', JSON.stringify([{ ...item, quantity: -1 }]), JSON.stringify([{ ...item, quantity: 1.5 }]), JSON.stringify([{ ...item, quantity: 100 }])]) expect(parseCart(value)).toEqual([]); expect(parseCart(JSON.stringify([item, item]))).toEqual([item]); });
-  it('calculates current prices, subtotals, and total without trusting stored prices', () => { const result = resolveCart([item, { productId: 'pulsera-luna', options: {}, quantity: 3 }], seed.products); expect(result.total).toBe(122000); expect(result.lines[0].subtotal).toBe(56000); });
+  it('calculates current prices, subtotals, and total without trusting stored prices', () => { const result = resolveCart([item, { productId: 'pulsera-luna', options: {}, quantity: 3 }], seed.products); expect(result.total).toBe(97600); expect(result.lines[0].subtotal).toBe(44800); });
   it('blocks inactive, deleted and changed options', () => { const result = resolveCart([{ productId: 'anillo-archivo', options: {}, quantity: 1 }, { productId: 'missing', options: {}, quantity: 1 }, { ...item, options: { color: 'Rojo' } }], seed.products); expect(result.lines).toHaveLength(0); expect(result.issues).toHaveLength(3); });
-  it('rejects unknown option keys and reprices changed products', () => { expect(resolveCart([{ ...item, options: { color: 'Dorado', invalid: 'x' } }], seed.products).issues).toHaveLength(1); expect(resolveCart([item], seed.products.map(p => p.id === item.productId ? { ...p, price: 10000 } : p)).total).toBe(20000); });
+  it('rejects unknown option keys and reprices changed products', () => { expect(resolveCart([{ ...item, options: { color: 'Dorado', invalid: 'x' } }], seed.products).issues).toHaveLength(1); expect(resolveCart([item], seed.products.map(p => p.id === item.productId ? { ...p, wholesalePrice: 10000 } : p)).total).toBe(20000); });
 });
 describe('checkout and WhatsApp', () => {
   it('pickup requires no address, while delivery requires every address field', () => { expect(deliveryErrors(pickup)).toEqual({}); expect(Object.keys(deliveryErrors({ ...pickup, method: 'delivery' }))).toEqual(['city', 'department', 'neighborhood', 'address']); expect(deliveryErrors(delivery)).toEqual({}); });
   it('requires method, nonblank name and bounded fields', () => { expect(deliveryErrors({ ...pickup, method: '', name: '  ' })).toHaveProperty('method'); expect(deliveryErrors({ ...pickup, comments: 'a'.repeat(501) })).toHaveProperty('comments'); });
-  it('includes all delivery information, variants, totals and preparation time', () => { const text = createOrderMessage(resolveCart([item], seed.products).lines, { ...delivery, comments: 'Comentario de prueba & detalle' }); for (const value of ['🛍️ NUEVO PEDIDO', '👤 CLIENTE', '🚚 ENVÍO A DOMICILIO', delivery.name, delivery.neighborhood, delivery.address, delivery.complement, delivery.instructions, 'Color: Dorado', 'Cantidad: 2', '$28.000', '$56.000', 'TOTAL PRODUCTOS', '3 días hábiles después de su confirmación', 'Comentario de prueba & detalle']) expect(text).toContain(value); expect(text).not.toContain('🏪 RECOGER'); });
+  it('includes all delivery information, variants, totals and preparation time', () => { const text = createOrderMessage(resolveCart([item], seed.products).lines, { ...delivery, comments: 'Comentario de prueba & detalle' }); for (const value of ['🛍️ NUEVO PEDIDO', '👤 CLIENTE', '🚚 ENVÍO A DOMICILIO', delivery.name, delivery.neighborhood, delivery.address, delivery.complement, delivery.instructions, 'Color: Dorado', 'Cantidad: 2', '$22.400', '$44.800', 'TOTAL PRODUCTOS', 'Compras al por mayor a partir de $50.000', 'Comentario de prueba & detalle']) expect(text).toContain(value); expect(text).not.toContain('🏪 RECOGER'); });
   it('omits stale delivery details and empty optional fields for pickup', () => { const text = createOrderMessage(resolveCart([item], seed.products).lines, { ...delivery, method: 'pickup' }); expect(text).toContain('EL PEDIDO SERÁ RECOGIDO EN EL LOCAL'); for (const value of [delivery.address, delivery.complement, delivery.instructions, 'COMENTARIOS', 'ENVÍO A DOMICILIO']) expect(text).not.toContain(value); });
   it('generates an official encoded URL without losing accents, emoji or ampersands', () => { const message = '🛍️ José & Ana\nTalla: 7 + envío'; const url = new URL(whatsappLink(message, '12345678901')); expect(url.hostname).toBe('wa.me'); expect(url.searchParams.get('text')).toBe(message); });
   it('does not invent a telephone number or create an empty order', () => { expect(() => whatsappLink('Pedido', '')).toThrow('pendiente de configurar'); expect(() => whatsappLink('Pedido', '+57abc')).toThrow(); expect(() => createOrderMessage([], delivery)).toThrow(); expect(() => createOrderMessage(resolveCart([item], seed.products).lines, { ...delivery, name: '' })).toThrow(); });

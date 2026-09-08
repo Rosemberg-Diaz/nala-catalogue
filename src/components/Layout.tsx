@@ -11,7 +11,7 @@ export default function Layout() {
   useEffect(() => { window.scrollTo(0, 0); const main = document.getElementById('contenido'); main?.focus({ preventScroll: true }); }, [location.pathname]);
   return <>
     <a className="skip-link" href="#contenido" onClick={event => { event.preventDefault(); document.getElementById('contenido')?.focus(); }}>Saltar al contenido</a>
-    <div className="announcement"><span>{business.wholesale.announcement}</span><span className="announcement-divider">✦</span><span>Accesorios bajo pedido</span></div>
+    <div className="announcement"><span>{business.wholesale.announcement}</span><span className="announcement-divider">✦</span><span>Desde $50.000</span></div>
     <header className="site-header"><div className="container header-inner">
       <Link to="/" className="brand" aria-label={`${business.name}, inicio`}><Brand/></Link>
       <nav className="desktop-nav" aria-label="Navegación principal"><NavLink to="/" end>Inicio</NavLink><NavLink to="/catalogo">Todos los accesorios</NavLink><Link to="/catalogo?destacados=1">Favoritos de Nala <Heart size={13}/></Link><Link to="/como-pedir">Cómo pedir</Link></nav>
