@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function admin() { return request.auth != null && request.auth.token.admin == true; }
+    function imageValid(image) {
+      return image is map && image.keys().hasOnly(['url', 'alt']) && image.keys().hasAll(['url', 'alt'])
+        && image.url is string && image.url.size() <= 2048
+        && (image.url.matches('https://[^\\s]+') || image.url.matches('/images/[a-zA-Z0-9/_.-]+'))
+        && image.alt is string && image.alt.size() > 0 && image.alt.size() <= 160;
+    }
+    function imagesValid(images) {
+      return images is list && images.size() >= 1 && images.size() <= 8
+        && imageValid(images[0])
+        && (images.size() < 2 || imageValid(images[1]))
+        && (images.size() < 3 || imageValid(images[2]))
+        && (images.size() < 4 || imageValid(images[3]))
+        && (images.size() < 5 || imageValid(images[4]))
+        && (images.size() < 6 || imageValid(images[5]))
+        && (images.size() < 7 || imageValid(images[6]))
+        && (images.size() < 8 || imageValid(images[7]));
+    }
+    function optionValid(option) {
+      return option is map && option.keys().hasOnly(['id', 'name', 'required', 'values'])
+        && option.keys().hasAll(['id', 'name', 'required', 'values'])
+        && option.id is string && option.id.size() > 0 && option.id.size() <= 60
+        && option.name is string && option.name.size() > 0 && option.name.size() <= 60
+        && option.required is bool && option.values is list && option.values.size() >= 1 && option.values.size() <= 30
+        && option.values.join('|').size() <= 1829;
+    }
+    function optionsValid(options) {
+      return options is list && options.size() <= 5
+        && (options.size() < 1 || optionValid(options[0]))
+        && (options.size() < 2 || optionValid(options[1]))
+        && (options.size() < 3 || optionValid(options[2]))
+        && (options.size() < 4 || optionValid(options[3]))
+        && (options.size() < 5 || optionValid(options[4]));
+    }
+    function validProduct(id) {
+      let p = request.resource.data;
+      return p.keys().hasAll(['id','name','description','price','categoryId','images','options','featured','active','createdAt'])
+        && p.keys().hasOnly(['id','name','description','price','categoryId','images','options','featured','active','createdAt'])
+        && p.id == id && id.matches('[a-zA-Z0-9-]+') && id.size() <= 100
+        && p.name is string && p.name.size() >= 2 && p.name.size() <= 100
+        && p.description is string && p.description.size() >= 10 && p.description.size() <= 3000
+        && p.price is int && p.price >= 1 && p.price <= 100000000
+        && p.categoryId is string && p.categoryId.size() > 0 && p.categoryId.size() <= 100
+        && exists(/databases/$(database)/documents/categories/$(p.categoryId))
+        && p.active is bool && p.featured is bool && p.createdAt is number
+        && imagesValid(p.images) && optionsValid(p.options);
+    }
+    match /products/{id} {
+      allow read: if admin() || resource.data.active == true;
+      allow create: if admin() && validProduct(id);
+      allow update: if admin() && validProduct(id) && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+    match /categories/{id} {
+      allow read: if true;
+      allow create, update: if admin()
+        && request.resource.data.keys().hasOnly(['id','name'])
+        && request.resource.data.keys().hasAll(['id','name'])
+        && request.resource.data.id == id && id.matches('[a-zA-Z0-9-]+') && id.size() <= 100
+        && request.resource.data.name is string && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 60;
+      allow delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
