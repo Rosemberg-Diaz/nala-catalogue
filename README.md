@@ -1,5 +1,7 @@
 # nala catalogue
 
+Sitio principal publicado en Firebase Hosting Spark: **https://nala-catalogue.web.app/**. El panel está en **https://nala-catalogue.web.app/admin** y se abre también desde el enlace **Administración** del pie de página. Requiere una cuenta de Firebase Authentication con el claim `admin: true`. GitHub Pages continúa disponible y utiliza el mismo catálogo de Firestore.
+
 Tienda web mobile first para un emprendimiento de accesorios bajo pedido. La experiencia pública completa —inicio, categorías, búsqueda, producto, variantes, bolsa, checkout, revisión y WhatsApp— funciona sin Firebase usando un repositorio mock. La interfaz y la lógica de negocio consumen `CatalogRepository`, por lo que Firebase se activa sin reescribir las pantallas.
 
 ## Versión estática para compartir por GitHub Pages
